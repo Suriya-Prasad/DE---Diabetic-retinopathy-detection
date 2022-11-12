@@ -3,52 +3,53 @@ import numpy as np
 import random
 from tqdm import tqdm
 import openpyxl
+import math
 
 
-def openimage(i):
+def openimage(i,side):
     t1 = i // 10
     t2 = i % 10
-    filename = "HRF Dataset/Images/image_0"+str(t1)+str(t2)+".jpg"
+    filename = "ChaseDb1 Dataset/Images/Image_"+str(t1)+str(t2)+side+".jpg"
 
     return filename
 
 
-def saveimage(i):
+def saveimage(i,side):
     t1 = i // 10
     t2 = i % 10
-    filename = "HRF Dataset/Preprocessed_HRF/Images/image_0"+str(t1)+str(t2)+".jpg"
+    filename = "ChaseDb1 Dataset/Preprocessed_ChaseDb1/Images/Image_"+str(t1)+str(t2)+side+".jpg"
 
     return filename
 
 
-def openimagep(i):
+def openimagep(i,side):
     t1 = i // 10
     t2 = i % 10
-    filename = "HRF Dataset/Preprocessed_HRF/Images/image_0"+str(t1)+str(t2)+".jpg"
+    filename = "ChaseDb1 Dataset/Preprocessed_ChaseDb1/Images/Image_"+str(t1)+str(t2)+side+".jpg"
 
     return filename
 
 
-def saveimagep(i):
+def saveimagep(i,side):
     t1 = i // 10
     t2 = i % 10
-    filename = "HRF Dataset/Output_HRF/Images/image_0"+str(t1)+str(t2)+".jpg"
+    filename = "ChaseDb1 Dataset/Output_ChaseDb1/Images/Image_"+str(t1)+str(t2)+side+".jpg"
 
     return filename
 
 
-def openimageo(i):
+def openimageo(i,side):
     t1 = i // 10
     t2 = i % 10
-    filename = "HRF Dataset/Output_HRF/Images/image_0"+str(t1)+str(t2)+".jpg"
+    filename = "ChaseDb1 Dataset/Output_ChaseDb1/Images/Image_"+str(t1)+str(t2)+side+".jpg"
 
     return filename
 
 
-def saveimageo(i):
+def saveimageo(i,side):
     t1 = i // 10
     t2 = i % 10
-    filename = "HRF Dataset/Truth Values_HRF/Images/image_0"+str(t1)+str(t2)+".jpg"
+    filename = "ChaseDb1 Dataset/Truth Values_ChaseDb1/Images/Image_"+str(t1)+str(t2)+side+".jpg"
 
     return filename
 
@@ -56,8 +57,14 @@ def saveimageo(i):
 # CLAHE and Median Blur
 
 def preprocessing():
-    for i in tqdm(range(1,46),desc='Pre-Processing in progress'):
-        open_path = openimage(i)
+    for i in tqdm(range(1,29),desc='Pre-Processing in progress'):
+
+        if i % 2 == 0:
+            side = 'R'
+        else:
+            side = 'L'
+
+        open_path = openimage(math.ceil(i/2),side)
         img = cv2.imread(open_path)
 
         if img is None:
@@ -75,7 +82,7 @@ def preprocessing():
 
         blur = cv2.medianBlur(clahe_image,145)
         
-        save_path = saveimage(i)
+        save_path = saveimage(math.ceil(i/2),side)
         cv2.imwrite(save_path,blur)
 
 
@@ -134,11 +141,16 @@ def check_bounds(mutant,shape):
 def segmentation():
 
     workbook = openpyxl.load_workbook("Retinal fundus images centres.xlsx")
-    sheet = workbook['Sheet6']
+    sheet = workbook['Sheet3']
 
-    for i in tqdm(range(1,46),desc='Image Segmentation in progress'):
+    for i in tqdm(range(1,29),desc='Image Segmentation in progress'):
 
-        open_path = openimagep(i)
+        if i % 2 == 0:
+            side = 'R'
+        else:
+            side = 'L'
+
+        open_path = openimagep(math.ceil(i/2),side)
         img = cv2.imread(open_path)
 
         original_image = img
@@ -197,16 +209,16 @@ def segmentation():
                         min_fitness,min_point = q2,populations[k][m]
 
         cv2.circle(original_image,(min_point[1],min_point[0]),original_image.shape[0]//13,(0,0,255),5)
-        save_path = saveimagep(i)
+        save_path = saveimagep(math.ceil(i/2),side)
         cv2.imwrite(save_path,original_image)
 
-        distance = ((sheet['D'+str(i+3)].value - min_point[1])**2 + (sheet['E'+str(i+3)].value - min_point[0])**2)**0.5
+        distance = ((sheet['C'+str(i+3)].value - min_point[1])**2 + (sheet['D'+str(i+3)].value - min_point[0])**2)**0.5
 
-        sheet['B'+str(i+3)].value = min_point[1]
-        sheet['C'+str(i+3)].value = min_point[0]
-        sheet['F'+str(i+3)].value = distance
+        sheet['E'+str(i+3)].value = min_point[1]
+        sheet['F'+str(i+3)].value = min_point[0]
+        sheet['G'+str(i+3)].value = distance
 
-        sheet['G'+str(i+3)].value = 'N' if distance > original_image.shape[0]//13 else 'Y'
+        sheet['H'+str(i+3)].value = 'N' if distance > original_image.shape[0]//13 else 'Y'
     
     workbook.save("Retinal fundus images centres.xlsx")
 
@@ -215,21 +227,27 @@ def segmentation():
 def truth_values():
 
     workbook = openpyxl.load_workbook("Retinal fundus images centres.xlsx")
-    sheet = workbook['Sheet6']
+    sheet = workbook['Sheet3']
     
-    for i in tqdm(range(1,46),desc='Truth-Value in progress'):
-        open_path = openimageo(i)
+    for i in tqdm(range(1,29),desc='Truth-Value in progress'):
+
+        if i % 2 == 0:
+            side = 'R'
+        else:
+            side = 'L'
+
+        open_path = openimageo(math.ceil(i/2),side)
         img = cv2.imread(open_path)
 
-        cv2.circle(img,(sheet['D'+str(i+3)].value,sheet['E'+str(i+3)].value),img.shape[0]//13,(0,255,0),5)
-        save_path = saveimageo(i)
+        cv2.circle(img,(sheet['C'+str(i+3)].value,sheet['D'+str(i+3)].value),img.shape[0]//13,(0,255,0),5)
+        save_path = saveimageo(math.ceil(i/2),side)
         cv2.imwrite(save_path,img)
 
         blank1 = np.zeros(img.shape,dtype='uint8')
         blank2 = np.zeros(img.shape,dtype='uint8') 
 
-        cv2.circle(blank1,(sheet['D'+str(i+3)].value,sheet['E'+str(i+3)].value),img.shape[0]//13,(0,255,0),-1)
-        cv2.circle(blank2,(sheet['B'+str(i+3)].value,sheet['C'+str(i+3)].value),img.shape[0]//13,(0,255,0),-1)
+        cv2.circle(blank1,(sheet['C'+str(i+3)].value,sheet['D'+str(i+3)].value),img.shape[0]//13,(0,255,0),-1)
+        cv2.circle(blank2,(sheet['E'+str(i+3)].value,sheet['F'+str(i+3)].value),img.shape[0]//13,(0,255,0),-1)
 
         and_image = cv2.bitwise_and(blank1,blank2,mask=None)
         xor_image_actual = cv2.bitwise_xor(blank1,and_image,mask=None)
@@ -243,10 +261,10 @@ def truth_values():
         false_postive = xor_image_actual.sum()//255
         false_negative = xor_image_predicted.sum()//255
 
-        sheet['H'+str(i+3)].value = true_positive
-        sheet['I'+str(i+3)].value = false_postive
-        sheet['J'+str(i+3)].value = false_negative
-        sheet['K'+str(i+3)].value = (img.shape[0]*img.shape[1])-true_positive-false_postive-false_negative
+        sheet['I'+str(i+3)].value = true_positive
+        sheet['J'+str(i+3)].value = false_postive
+        sheet['K'+str(i+3)].value = false_negative
+        sheet['L'+str(i+3)].value = (img.shape[0]*img.shape[1])-true_positive-false_postive-false_negative
     
     workbook.save("Retinal fundus images centres.xlsx")
 
