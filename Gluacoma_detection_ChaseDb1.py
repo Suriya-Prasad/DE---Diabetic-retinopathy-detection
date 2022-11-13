@@ -80,7 +80,7 @@ def preprocessing():
         clahe = cv2.createCLAHE(clipLimit=2)
         clahe_image = clahe.apply(img)
 
-        blur = cv2.medianBlur(clahe_image,145)
+        blur = cv2.medianBlur(clahe_image,65)
         
         save_path = saveimage(math.ceil(i/2),side)
         cv2.imwrite(save_path,blur)
