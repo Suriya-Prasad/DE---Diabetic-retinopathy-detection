@@ -63,8 +63,6 @@ def preprocessing():
         if img is None:
             print(f"image {i} not found")
 
-        dimension = img.shape
-
         b,g,r = cv2.split(img)
         img = g
 
@@ -83,7 +81,6 @@ def solution_set(npop,shape):
     height,width = shape[0],shape[1]
     xmin,ymin = width//10,height//3
     xmax,ymax = width-xmin-1,height-ymin-1
-    random_points = []
     b1 = random.sample(range(ymin,ymax), npop)
     b2 = random.sample(range(xmin,xmax), npop)
     
